@@ -1,6 +1,8 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <algorithm>
+
 #include "object.h"
 
 class Camera {
@@ -8,6 +10,9 @@ public:
     // Aspect to calculate image height
     double aspectRatio = 1.0;
     int imageWidth = 100;
+
+    // Determines how many comparisons to do to surrounding pixels
+    int samplesPerPixel = 10;
 
     void Render(const Object& world) {
         Initialize();
@@ -17,18 +22,20 @@ public:
         for (int j = 0; j < imageHeight; j++) {
             std::clog << "\rScanlines remaining: " << (imageHeight - j) << "" << std::flush;
             for (int i = 0; i < imageWidth; i++) {
-                auto pixelCenter = pixel00Location + (i * pixelDeltaU) + (j * pixelDeltaV);
-                auto rayDirection = pixelCenter - center;
-                Ray r(center, rayDirection);
-
-                Color pixelColor = RayColor(r, world);
-                WriteColor(std::cout, pixelColor);
+                Color pixelColor(0, 0, 0);
+                for (int sample = 0; sample < samplesPerPixel; sample++) {
+                    Ray r = GetRay(i, j);
+                    pixelColor += RayColor(r, world);
+                }
+                WriteColor(std::cout, pixelSamplesScale * pixelColor);
             }
         }
     }
 
 private:
     int imageHeight;
+    // Changes color interloping based on number of samples
+    double pixelSamplesScale;
     Point3 center;
     Point3 pixel00Location;
 
@@ -41,6 +48,8 @@ private:
         // Calculate height from aspect ratio and width
         imageHeight = int(imageWidth / aspectRatio);
         imageHeight = (imageHeight < 1) ? 1 : imageHeight;
+
+        pixelSamplesScale = 1.0 / samplesPerPixel;
 
         center = Point3(0, 0, 0);
 
@@ -61,6 +70,24 @@ private:
         auto viewportUpperLeft =
             center - Vec3(0, 0, focalLength) - viewportU / 2 - viewportV / 2;
         pixel00Location = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
+    }
+
+    // Gets a ray emitted from the camera to the offset (i, j)
+    [[nodiscard]] Ray GetRay(int i, int j) const {
+        auto offset = SampleSquare();
+        auto pixelSample = pixel00Location
+                            + ((i + offset.X()) * pixelDeltaU)
+                            + ((j + offset.Y()) * pixelDeltaV);
+
+        auto rayOrigin = center;
+        auto rayDirection = pixelSample - rayOrigin;
+
+        return {rayOrigin, rayDirection};
+    }
+
+    // Chooses a random sample in the unit square [-0.5, -0.5], [0.5, 0.5]
+    [[nodiscard]] Vec3 SampleSquare() const {
+        return {RandomDouble() - 0.5, RandomDouble() - 0.5, RandomDouble() - 0.5};
     }
 
     [[nodiscard]] Color RayColor(const Ray& r, const Object& world) const {
