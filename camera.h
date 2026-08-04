@@ -14,6 +14,9 @@ public:
     // Determines how many comparisons to do to surrounding pixels
     int samplesPerPixel = 10;
 
+    // Limit on how many times we will bounce a ray off a surface
+    int maxDepth = 10;
+
     void Render(const Object& world) {
         Initialize();
 
@@ -25,7 +28,7 @@ public:
                 Color pixelColor(0, 0, 0);
                 for (int sample = 0; sample < samplesPerPixel; sample++) {
                     Ray r = GetRay(i, j);
-                    pixelColor += RayColor(r, world);
+                    pixelColor += RayColor(r, maxDepth, world);
                 }
                 WriteColor(std::cout, pixelSamplesScale * pixelColor);
             }
@@ -90,12 +93,19 @@ private:
         return {RandomDouble() - 0.5, RandomDouble() - 0.5, RandomDouble() - 0.5};
     }
 
-    [[nodiscard]] Color RayColor(const Ray& r, const Object& world) const {
+    [[nodiscard]] Color RayColor(const Ray& r, int depth, const Object& world) const {
+        // If we've hit the max depth that we can handle, no more light will be gathered
+        if (depth <= 0)
+            return {0, 0, 0};
+
         HitRecord hitRecord;
-        if (world.Hit(r, Interval(0, infinity), hitRecord)) {
-            return 0.5 * (hitRecord.normal + Color(1, 1, 1));
+        if (world.Hit(r, Interval(0.001, infinity), hitRecord)) {
+            // Get a random direction, bounce a ray, and return the color
+            Vec3 direction = RandomOnHemisphere(hitRecord.normal);
+            return 0.5 * RayColor(Ray(hitRecord.p, direction), depth - 1, world);
         }
 
+        // If we do not register a hit, render the "skybox"
         Vec3 unitDirection = UnitVector(r.Direction());
         auto a = 0.5 * (unitDirection.Y() + 1.0);
         return (1.0 - a) * Color(1.0, 1.0, 1.0) + a * Color(0.5, 0.7, 1.0);

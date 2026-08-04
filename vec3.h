@@ -47,6 +47,16 @@ class Vec3 {
     [[nodiscard]] double LengthSquared() const {
         return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
     }
+
+    // Creates a random vector of doubles
+    [[nodiscard]] static Vec3 Random() {
+       return {RandomDouble(), RandomDouble(), RandomDouble()};
+    }
+
+    // Creates a random vector where each value falls between [min, max)
+    [[nodiscard]] static Vec3 Random(double min, double max) {
+        return {RandomDouble(min, max), RandomDouble(min, max), RandomDouble(min, max)};
+    }
 };
 
 // Create an alias to describe points in 3D space
@@ -96,6 +106,27 @@ inline Vec3 Cross(const Vec3& u, const Vec3& v) {
 
 inline Vec3 UnitVector(const Vec3& v) {
     return v / v.Length();
+}
+
+// Creates a unit vector from a random point in the unit sphere
+inline Vec3 RandomUnitVector() {
+    while (true) {
+        auto p = Vec3::Random(-1, 1);
+        auto lengthSquared = p.LengthSquared();
+        if (1e-160 < lengthSquared && lengthSquared <= 1)
+            return p / sqrt(lengthSquared);
+    }
+}
+
+// Determines if the vector is facing the correct way (out from the object)
+inline Vec3 RandomOnHemisphere(const Vec3& normal) {
+    // Get a unit sphere vector and take the dot product
+    Vec3 onUnitSphere = RandomUnitVector();
+    // If the dot is positive, it's going in the right direction, if not, negate
+    if (Dot(onUnitSphere, normal) > 0.0)
+        return onUnitSphere;
+    else
+        return -onUnitSphere;
 }
 
 #endif
