@@ -17,6 +17,9 @@ public:
     // Limit on how many times we will bounce a ray off a surface
     int maxDepth = 10;
 
+    // Determines whether or not to use lambertian diffuse
+    bool lambertian = false;
+
     void Render(const Object& world) {
         Initialize();
 
@@ -101,7 +104,14 @@ private:
         HitRecord hitRecord;
         if (world.Hit(r, Interval(0.001, infinity), hitRecord)) {
             // Get a random direction, bounce a ray, and return the color
-            Vec3 direction = RandomOnHemisphere(hitRecord.normal);
+            Vec3 direction;
+
+            // Render depending on the diffuse method
+            if (lambertian)
+                direction = hitRecord.normal + RandomUnitVector();
+            else
+                direction = RandomOnHemisphere(hitRecord.normal);
+
             return 0.5 * RayColor(Ray(hitRecord.p, direction), depth - 1, world);
         }
 

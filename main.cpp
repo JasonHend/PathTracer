@@ -18,5 +18,7 @@ int main() {
     mainCamera.samplesPerPixel = 100;
     mainCamera.maxDepth = 50;
 
+    mainCamera.lambertian = true;
+
     mainCamera.Render(world);
 }

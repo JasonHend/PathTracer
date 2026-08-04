@@ -6,10 +6,23 @@
 
 using Color = Vec3;
 
+// Square root conversion for gamma correction
+inline double LinearToGamma(double linearComponent) {
+    if (linearComponent > 0)
+        return std::sqrt(linearComponent);
+
+    return 0;
+}
+
 inline void WriteColor(std::ostream& out, const Color& pixelColor) {
     auto r = pixelColor.X();
     auto g = pixelColor.Y();
     auto b = pixelColor.Z();
+
+    // Apply gamma correction to the pixel colors
+    r = LinearToGamma(r);
+    g = LinearToGamma(g);
+    b = LinearToGamma(b);
 
     // Translate from [0,1] range to [0,255]
     static const Interval intensity(0.000, 0.999);
