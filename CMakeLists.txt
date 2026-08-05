@@ -12,4 +12,5 @@ add_executable(PathTracer main.cpp
         object_list.h
         math_helpers.h
         interval.h
-        camera.h)
+        camera.h
+        material.h)

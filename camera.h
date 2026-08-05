@@ -3,6 +3,7 @@
 
 #include <algorithm>
 
+#include "material.h"
 #include "object.h"
 
 class Camera {
@@ -103,16 +104,12 @@ private:
 
         HitRecord hitRecord;
         if (world.Hit(r, Interval(0.001, infinity), hitRecord)) {
-            // Get a random direction, bounce a ray, and return the color
-            Vec3 direction;
-
-            // Render depending on the diffuse method
-            if (lambertian)
-                direction = hitRecord.normal + RandomUnitVector();
-            else
-                direction = RandomOnHemisphere(hitRecord.normal);
-
-            return 0.5 * RayColor(Ray(hitRecord.p, direction), depth - 1, world);
+            // Utilize the reflectance function in material to calculate a bounced ray from the hit object
+            Ray scattered;
+            Color attenuation;
+            if (hitRecord.material->Scatter(r, hitRecord, attenuation, scattered))
+                return attenuation * RayColor(scattered, depth - 1, world);
+            return {0, 0, 0};
         }
 
         // If we do not register a hit, render the "skybox"

@@ -5,7 +5,8 @@
 
 class Sphere : public Object {
 public:
-    Sphere(const Point3& center, double radius): center(center), radius(std::fmax(0, radius)) {}
+    Sphere(const Point3& center, double radius, shared_ptr<Material> material)
+        : center(center), radius(std::fmax(0, radius)), material(material) {}
 
     // Utilizes simplified quadratic formula to determine if a ray has hit the sphere
     bool Hit(const Ray& r, Interval rayT, HitRecord& hitRecord) const override {
@@ -32,6 +33,7 @@ public:
         hitRecord.p = r.At(hitRecord.t);
         Vec3 outwardNormal = (hitRecord.p - center) / radius;
         hitRecord.SetFaceNormal(r, outwardNormal);
+        hitRecord.material = material;
 
         return true;
     }
@@ -39,6 +41,7 @@ public:
 private:
     Point3 center;
     double radius;
+    shared_ptr<Material> material;
 };
 
 #endif

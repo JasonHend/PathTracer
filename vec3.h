@@ -48,6 +48,12 @@ class Vec3 {
         return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
     }
 
+    // Checks if a vector's value is close to zero
+    [[nodiscard]] bool NearZero() const {
+        auto s = 1e-8;
+        return (std::fabs(e[0]) < s) && (std::fabs(e[1]) < s) && (std::fabs(e[2]) < 2);
+    }
+
     // Creates a random vector of doubles
     [[nodiscard]] static Vec3 Random() {
        return {RandomDouble(), RandomDouble(), RandomDouble()};
@@ -127,6 +133,11 @@ inline Vec3 RandomOnHemisphere(const Vec3& normal) {
         return onUnitSphere;
     else
         return -onUnitSphere;
+}
+
+// Reflectance function utilizing the dot product of an incoming vector and the normal vector
+inline Vec3 Reflect(const Vec3& v, const Vec3& n) {
+    return v - 2 * Dot(v, n) * n;
 }
 
 #endif

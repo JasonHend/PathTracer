@@ -1,10 +1,13 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
+class Material;
+
 class HitRecord {
 public:
     Point3 p;
     Vec3 normal;
+    shared_ptr<Material> material;
     double t{};
 
     // Information regarding back facing vs. front facing and setting normals
