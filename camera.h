@@ -18,7 +18,14 @@ public:
     // Limit on how many times we will bounce a ray off a surface
     int maxDepth = 10;
 
-    // Determines whether or not to use lambertian diffuse
+    double verticalFOV = 90;
+
+    // Directional vectors for camera orientation
+    Point3 lookFrom = Point3(0, 0, 0);
+    Point3 lookAt = Point3(0, 0, -1);
+    Vec3 upVector = Vec3(0, 1, 0);
+
+    // Determines whether to use lambertian diffuse
     bool lambertian = false;
 
     void Render(const Object& world) {
@@ -50,6 +57,9 @@ private:
     Vec3 pixelDeltaU;
     Vec3 pixelDeltaV;
 
+    // Camera orientation vectors
+    Vec3 u, v, w;
+
     // Initialization and ray coloration functions
     void Initialize() {
         // Calculate height from aspect ratio and width
@@ -58,16 +68,23 @@ private:
 
         pixelSamplesScale = 1.0 / samplesPerPixel;
 
-        center = Point3(0, 0, 0);
+        center = lookFrom;
 
         // Camera set up
-        auto focalLength = 1.0;
-        auto viewportHeight = 2.0;
+        auto focalLength = (lookFrom - lookAt).Length();
+        auto theta = DegreesToRadians(verticalFOV);
+        auto h = std::tan(theta / 2);
+        auto viewportHeight = 2 * h * focalLength;
         auto viewportWidth = viewportHeight * (double(imageWidth) / imageHeight);
 
+        // Calculate unit vectors based on the orientational vectors
+        w = UnitVector(lookFrom - lookAt);
+        u = UnitVector(Cross(upVector, w));
+        v = UnitVector(Cross(w, u));
+
         // Calculate across and down vectors
-        auto viewportU = Vec3(viewportWidth, 0, 0);
-        auto viewportV = Vec3(0, -viewportHeight, 0);
+        auto viewportU = viewportWidth * u;
+        auto viewportV = viewportHeight * - v;
 
         // Calculate pixel data
         pixelDeltaU = viewportU / imageWidth;
@@ -75,7 +92,7 @@ private:
 
         // Calculate the location of upper left hand pixel
         auto viewportUpperLeft =
-            center - Vec3(0, 0, focalLength) - viewportU / 2 - viewportV / 2;
+            center - (focalLength * w) - viewportU / 2 - viewportV / 2;
         pixel00Location = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
     }
 
