@@ -114,6 +114,15 @@ inline Vec3 UnitVector(const Vec3& v) {
     return v / v.Length();
 }
 
+// Returns a random point inside the defocus disk
+inline Vec3 RandomInUnitDisk() {
+    while (true) {
+        auto p = Vec3(RandomDouble(-1, 1), RandomDouble(-1, 1), 0);
+        if (p.LengthSquared() < 1)
+            return p;
+    }
+}
+
 // Creates a unit vector from a random point in the unit sphere
 inline Vec3 RandomUnitVector() {
     while (true) {

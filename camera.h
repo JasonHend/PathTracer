@@ -25,6 +25,10 @@ public:
     Point3 lookAt = Point3(0, 0, -1);
     Vec3 upVector = Vec3(0, 1, 0);
 
+    // Defocus values
+    double defocusAngle = 0;
+    double focusDistance = 10;
+
     // Determines whether to use lambertian diffuse
     bool lambertian = false;
 
@@ -60,6 +64,10 @@ private:
     // Camera orientation vectors
     Vec3 u, v, w;
 
+    // Defocus disk UVs for unit points
+    Vec3 defocusDiskU;
+    Vec3 defocusDiskV;
+
     // Initialization and ray coloration functions
     void Initialize() {
         // Calculate height from aspect ratio and width
@@ -71,10 +79,9 @@ private:
         center = lookFrom;
 
         // Camera set up
-        auto focalLength = (lookFrom - lookAt).Length();
         auto theta = DegreesToRadians(verticalFOV);
         auto h = std::tan(theta / 2);
-        auto viewportHeight = 2 * h * focalLength;
+        auto viewportHeight = 2 * h * focusDistance;
         auto viewportWidth = viewportHeight * (double(imageWidth) / imageHeight);
 
         // Calculate unit vectors based on the orientational vectors
@@ -92,8 +99,13 @@ private:
 
         // Calculate the location of upper left hand pixel
         auto viewportUpperLeft =
-            center - (focalLength * w) - viewportU / 2 - viewportV / 2;
+            center - (focusDistance * w) - viewportU / 2 - viewportV / 2;
         pixel00Location = viewportUpperLeft + 0.5 * (pixelDeltaU + pixelDeltaV);
+
+        // Calculate the defocus disk UVs
+        auto defocusRadius = focusDistance * std::tan(DegreesToRadians(defocusAngle / 2));
+        defocusDiskU = u * defocusRadius;
+        defocusDiskV = v * defocusRadius;
     }
 
     // Gets a ray emitted from the camera to the offset (i, j)
@@ -103,7 +115,7 @@ private:
                             + ((i + offset.X()) * pixelDeltaU)
                             + ((j + offset.Y()) * pixelDeltaV);
 
-        auto rayOrigin = center;
+        auto rayOrigin = (defocusAngle <= 0) ? center : DefocusDiskSample();
         auto rayDirection = pixelSample - rayOrigin;
 
         return {rayOrigin, rayDirection};
@@ -112,6 +124,12 @@ private:
     // Chooses a random sample in the unit square [-0.5, -0.5], [0.5, 0.5]
     [[nodiscard]] Vec3 SampleSquare() const {
         return {RandomDouble() - 0.5, RandomDouble() - 0.5, RandomDouble() - 0.5};
+    }
+
+    // Chooses a random point in the camera defocus disk
+    [[nodiscard]] Point3 DefocusDiskSample() const {
+        auto p = RandomInUnitDisk();
+        return center + (p[0] * defocusDiskU) + (p[1] * defocusDiskV);
     }
 
     [[nodiscard]] Color RayColor(const Ray& r, int depth, const Object& world) const {
