@@ -140,4 +140,12 @@ inline Vec3 Reflect(const Vec3& v, const Vec3& n) {
     return v - 2 * Dot(v, n) * n;
 }
 
+// Refracting formula, splitting a ray into it's perpendicular and parallel quantities and utilizing the law of cosines
+inline Vec3 Refract(const Vec3& uv, const Vec3& n, double etaiOverEtat) {
+    auto cosTheta = std::fmin(Dot(-uv, n), 1.0);
+    Vec3 rayOutPerp = etaiOverEtat * (uv + cosTheta * n);
+    Vec3 rayOutParallel = -std::sqrt(std::fabs(1.0 - rayOutPerp.LengthSquared())) * n;
+    return rayOutPerp + rayOutParallel;
+}
+
 #endif
